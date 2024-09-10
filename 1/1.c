@@ -1,11 +1,6 @@
 #include "matrix.h"
 
-#define L3 12*1024*1024
-#define L2 5*1024*1024
-#define L1 320*1024
-
 // L3 - 12 МБ, L2 - 5 МБ, L1 - 320 КБ
-
 typ** A;
 typ** B;
 typ** C;
@@ -19,11 +14,18 @@ int block_size_L3;
 int block_size_L2;
 int block_size_L1;
 
-int block_size;
+int block_size_L3_row;
+int block_size_L3_col;
+int block_size_L2_row;
+int block_size_L2_col;
+int block_size_L1_row;
+int block_size_L1_col;
+
 
 void init()
 {
     srand(time(NULL));
+
     int matrix_size = calculate_matrix_size(L3);
     block_rows = calculate_block_size(L3);
 
@@ -31,7 +33,24 @@ void init()
     block_size_L2 = calculate_block_size(L2);
     block_size_L3 = calculate_block_size(L3);
 
-    block_size = calculate_block_size(L3);
+
+    printf("%d, %d, %d\n", block_size_L1, block_size_L2, block_size_L3);
+    // exit(0);
+
+    block_size_L3_row = block_size_L3;
+    block_size_L3_col = block_size_L3;
+
+    block_size_L2_row = block_size_L3;
+    block_size_L2_col = block_size_L3*5/12;
+    int tmp = block_size_L2_col % 64;
+    block_size_L2_col -= tmp;
+
+    block_size_L1_row = block_size_L3;
+    block_size_L1_col = 320*block_size_L3/5/1024;
+    block_size_L1_col = 64;
+
+
+
 
     rowsA = block_rows;
     colsB = rowsA;
@@ -45,17 +64,22 @@ void init()
 
     colsA = temp;
     rowsB = colsA;
+
+    // rowsA = matrix_size;
+    // rowsB = matrix_size;
+    // colsA = matrix_size;
+    // colsB = matrix_size;
+
+
     
-    // printf("matrix size: %d\n", matrix_size);
     printf("rowsA: %d\n", rowsA);
     printf("colsA: %d\n", colsA);
     printf("matrix size: %d\n", colsA*rowsA*sizeof(typ));
 
-    // printf("block size:  %d\n", block_size);
-
     A = allocate_matrix(rowsA, colsA);
     B = allocate_matrix(rowsB, colsB);
     C = allocate_matrix(rowsA, colsB);
+
     fill_matrix(A, rowsA, colsA);
     fill_matrix(B, rowsB, colsB);
 }
@@ -77,18 +101,33 @@ int main()
     init();
 
     double first_time = profile_mult(mult_matrix_simple);
-    printf("Первый способ: %.3f секунд\n", first_time/1000);
+    printf("Обычное умножение: %.3f секунд\n", first_time/1000);
 
     print_matrix(C, 1, 5);
     free_matrix(C, rowsA);
     C = allocate_matrix(rowsA, colsB);
     
     double second_time = profile_mult(mult_matrix_L3);
-    printf("Второй способ: %.3f секунд\n", second_time/1000);
+    printf("Умножение с использованием L3: %.3f секунд\n", second_time/1000);
 
     print_matrix(C, 1, 5);
     free_matrix(C, rowsA);
+    C = allocate_matrix(rowsA, colsB);
 
-    printf("Блочный алгоритм быстрее в %.2f раз\n", first_time/second_time);
+    printf("L3 быстрее обычного умножения в %.2f раз\n", first_time/second_time);
+
+    double third_time = profile_mult(mult_matrix_L2);
+    printf("Умножение с использованием L2: %.3f секунд\n", third_time/1000);
+    print_matrix(C, 1, 5);
+    free_matrix(C, rowsA);
+
+    C = allocate_matrix(rowsA, colsB);
+
+    double fourth_time = profile_mult(mult_matrix_L1);
+    printf("Умножение с использованием L1: %.3f секунд\n", fourth_time/1000);
+    print_matrix(C, 1, 5);
+    free_matrix(C, rowsA);
+
+
     return 0;
 }

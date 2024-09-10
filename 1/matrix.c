@@ -13,7 +13,12 @@ extern int block_size_L3;
 extern int block_size_L2;
 extern int block_size_L1;
 
-extern int block_size;
+extern int block_size_L3_row;
+extern int block_size_L3_col;
+extern int block_size_L2_row;
+extern int block_size_L2_col;
+extern int block_size_L1_row;
+extern int block_size_L1_col;
 
 int calculate_matrix_size(int cache_size)
 {
@@ -42,17 +47,17 @@ void mult_matrix_simple()
 
 void mult_matrix_L3() 
 {
-    for (int i = 0; i < rowsA; i += block_size) 
+    for (int i = 0; i < rowsA; i += block_size_L3_row) 
     {
-        for (int k = 0; k < colsA; k += block_size) 
+        for (int k = 0; k < colsA; k += block_size_L3_col) 
         {
-            for (int j = 0; j < colsB; j += block_size) 
+            for (int j = 0; j < colsB; j += block_size_L3_col) 
             {
-                for (int ib = i; ib < i + block_size && ib < rowsA; ++ib) 
+                for (int ib = i; ib < i + block_size_L3_row && ib < rowsA; ++ib) 
                 {
-                    for (int kb = k; kb < k + block_size && kb < colsA; ++kb) 
+                    for (int kb = k; kb < k + block_size_L3_col && kb < colsA; ++kb) 
                     {
-                        for (int jb = j; jb < j + block_size && jb < colsB; ++jb) 
+                        for (int jb = j; jb < j + block_size_L3_col && jb < colsB; ++jb) 
                         {
                             C[ib][jb] += A[ib][kb] * B[kb][jb];
                         }
@@ -63,33 +68,21 @@ void mult_matrix_L3()
     }
 }
 
-void mult_matrix_L3_optimized() 
+void mult_matrix_L2() 
 {
-    int block_size_L1 = 320; // Размер блока для L1 кэша
-    int block_size_L2 = 5120; // Размер блока для L2 кэша
-
-    for (int i = 0; i < rowsA; i += block_size_L2) 
+    for (int i = 0; i < rowsA; i += block_size_L2_row) 
     {
-        for (int k = 0; k < colsA; k += block_size_L2) 
+        for (int k = 0; k < colsA; k += block_size_L2_col) 
         {
-            for (int j = 0; j < colsB; j += block_size_L2) 
+            for (int j = 0; j < colsB; j += block_size_L2_col) 
             {
-                for (int ii = i; ii < i + block_size_L2 && ii < rowsA; ii += block_size_L1) 
+                for (int ib = i; ib < i + block_size_L2_row && ib < rowsA; ++ib) 
                 {
-                    for (int kk = k; kk < k + block_size_L2 && kk < colsA; kk += block_size_L1) 
+                    for (int kb = k; kb < k + block_size_L2_col && kb < colsA; ++kb) 
                     {
-                        for (int jj = j; jj < j + block_size_L2 && jj < colsB; jj += block_size_L1) 
+                        for (int jb = j; jb < j + block_size_L2_col && jb < colsB; ++jb) 
                         {
-                            for (int ib = ii; ib < ii + block_size_L1 && ib < rowsA; ++ib) 
-                            {
-                                for (int kb = kk; kb < kk + block_size_L1 && kb < colsA; ++kb) 
-                                {
-                                    for (int jb = jj; jb < jj + block_size_L1 && jb < colsB; ++jb) 
-                                    {
-                                        C[ib][jb] += A[ib][kb] * B[kb][jb];
-                                    }
-                                }
-                            }
+                            C[ib][jb] += A[ib][kb] * B[kb][jb];
                         }
                     }
                 }
@@ -97,6 +90,62 @@ void mult_matrix_L3_optimized()
         }
     }
 }
+
+void mult_matrix_L1() 
+{
+    for (int i = 0; i < rowsA; i += block_size_L1_row) 
+    {
+        for (int k = 0; k < colsA; k += block_size_L1_col) 
+        {
+            for (int j = 0; j < colsB; j += block_size_L1_col) 
+            {
+                for (int ib = i; ib < i + block_size_L1_row && ib < rowsA; ++ib) 
+                {
+                    for (int kb = k; kb < k + block_size_L1_col && kb < colsA; ++kb) 
+                    {
+                        for (int jb = j; jb < j + block_size_L1_col && jb < colsB; ++jb) 
+                        {
+                            C[ib][jb] += A[ib][kb] * B[kb][jb];
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// void mult_matrix_L3_L2() 
+// {
+//     for (int i = 0; i < rowsA; i += block_size_L3_row) 
+//     {
+//         for (int k = 0; k < colsA; k += block_size_L3_col) 
+//         {
+//             for (int j = 0; j < colsB; j += block_size_L3_col) 
+//             {
+//                 for (int ib = i; ib < i + block_size_L3_row && ib < rowsA; ib += block_size_L2_row) 
+//                 {
+//                     for (int kb = k; kb < k + block_size_L3_col && kb < colsA; kb += block_size_L2_col) 
+//                     {
+//                         for (int jb = j; jb < j + block_size_L3_col && jb < colsB; jb += block_size_L2_col) 
+//                         {
+//                             for (int iib = ib; iib < ib + block_size_L2_row && iib < rowsA; ++iib) 
+//                             {
+//                                 for (int kkb = kb; kkb < kb + block_size_L2_col && kkb < colsA; ++kkb) 
+//                                 {
+//                                     for (int jjb = jb; jjb < jb + block_size_L2_col && jjb < colsB; ++jjb) 
+//                                     {
+//                                         C[iib][jjb] += A[iib][kkb] * B[kkb][jjb];
+//                                     }
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+
 
 typ** allocate_matrix(int rows, int cols)
 {
